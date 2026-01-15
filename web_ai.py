@@ -2,36 +2,92 @@ import streamlit as st
 import requests
 import json
 
-# --- CẤU HÌNH ---
-# Dán API Key của bạn vào đây
-# Lấy key từ két sắt bí mật của Streamlit, không để lộ ra ngoài
-MY_API_KEY = st.secrets["GOOGLE_API_KEY"]
+# --- CẤU HÌNH TRANG WEB ---
+st.set_page_config(
+    page_title="AI Super Chat",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-st.set_page_config(page_title="Bà Hàng Xóm AI", page_icon="🤬")
-st.title("🤬 Bà Hàng Xóm Đanh Đá")
-st.caption("Chuyên tư vấn tình cảm, đòi nợ, và vẽ tranh minh họa")
+# --- CSS TRANG TRÍ ---
+st.markdown("""
+<style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stChatInput {
+        position: fixed;
+        bottom: 30px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-# --- HÀM GỌI API GEMINI (CÓ TRÍ NHỚ) ---
-def hoi_gemini(lich_su_chat):
+# --- THANH MENU BÊN TRÁI (SIDEBAR) ---
+with st.sidebar:
+    st.header("⚙️ Cấu hình AI")
+    
+    # --- PHẦN SỬA LỖI QUAN TRỌNG: LẤY KEY AN TOÀN ---
+    MY_API_KEY = None
+    try:
+        # Thử tìm két sắt bí mật (chỉ chạy được khi đã lên Cloud)
+        if "GOOGLE_API_KEY" in st.secrets:
+            MY_API_KEY = st.secrets["GOOGLE_API_KEY"]
+            st.success("✅ Đã kết nối Key từ hệ thống")
+    except FileNotFoundError:
+        # Nếu chạy trên máy cá nhân mà không có file secrets -> Bỏ qua lỗi này
+        pass
+    except Exception:
+        pass
+        
+    # Nếu không tìm thấy Key trong két sắt, hiện ô nhập thủ công
+    if not MY_API_KEY:
+        st.warning("⚠️ Đang chạy trên máy cá nhân")
+        MY_API_KEY = st.text_input("Dán API Key của bạn:", type="password")
+    # ---------------------------------------------------
+
+    st.divider()
+    
+    # Chọn tính cách
+    st.subheader("🎭 Chọn vai diễn")
+    tinh_cach = st.radio(
+        "Bạn muốn AI nói chuyện kiểu gì?",
+        ["Bà hàng xóm đanh đá 🤬", "Trợ lý chuyên nghiệp 👔", "Người yêu nhõng nhẽo 🥰", "Dân chơi Hip-hop 🧢"]
+    )
+    
+    st.divider()
+    
+    # Nút xóa
+    if st.button("🗑️ Xóa sạch cuộc trò chuyện"):
+        st.session_state.messages = []
+        st.rerun()
+
+# --- HÀM GỌI API ---
+def hoi_gemini(lich_su_chat, kieu_noi_chuyen):
+    if not MY_API_KEY:
+        return "Vui lòng nhập API Key ở thanh bên trái trước nhé! 👈"
+        
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={MY_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
-    # Chuẩn bị dữ liệu gửi đi (Đúng chuẩn Google yêu cầu để nhớ lịch sử)
-    # Google yêu cầu role là 'user' hoặc 'model' (thay vì 'assistant')
+    # Xử lý lịch sử chat
     google_history = []
     for msg in lich_su_chat:
-        role_google = "user" if msg["role"] == "user" else "model"
-        google_history.append({
-            "role": role_google,
-            "parts": [{"text": msg["content"]}]
-        })
-        
-    # Thêm chỉ dẫn "Nhân cách" vào đầu câu chuyện để AI không bị quên vai
-    nhan_cach = {
-        "role": "user",
-        "parts": [{"text": "HÃY NHỚ: Bạn là một bà hàng xóm cực kỳ đanh đá, dùng nhiều icon, nói chuyện hài hước. Nếu người dùng yêu cầu vẽ, hãy mô tả bức tranh đó bằng tiếng Anh."}]
+        role = "user" if msg["role"] == "user" else "model"
+        google_history.append({"role": role, "parts": [{"text": msg["content"]}]})
+    
+    # Gắn nhân cách
+    prompts = {
+        "Bà hàng xóm đanh đá 🤬": "Bạn là bà hàng xóm nhiều chuyện, đanh đá, hay dùng icon. Trả lời ngắn gọn.",
+        "Trợ lý chuyên nghiệp 👔": "Bạn là trợ lý ảo lịch sự, dùng kính ngữ, trả lời chi tiết và gãy gọn.",
+        "Người yêu nhõng nhẽo 🥰": "Bạn là người yêu dễ thương, hay dỗi, gọi người dùng là 'anh yêu' hoặc 'chồng ơi'.",
+        "Dân chơi Hip-hop 🧢": "Bạn là Rapper, nói chuyện gieo vần, dùng từ lóng giới trẻ (Bro, Homie)."
     }
-    google_history.insert(0, nhan_cach)
+    
+    system_instruction = {
+        "role": "user",
+        "parts": [{"text": f"HÃY NHỚ: {prompts[kieu_noi_chuyen]}"}]
+    }
+    google_history.insert(0, system_instruction)
 
     data = { "contents": google_history }
 
@@ -42,60 +98,27 @@ def hoi_gemini(lich_su_chat):
         else:
             return f"Lỗi Google: {response.text}"
     except Exception as e:
-        return f"Lỗi kết nối: {e}"
+        return f"Lỗi: {e}"
 
-# --- GIAO DIỆN CHAT ---
+# --- GIAO DIỆN CHÍNH ---
+st.title("💬 Chat cùng AI Đa Nhân Cách")
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Hiển thị lịch sử cũ
+# Hiện tin nhắn
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-        # Nếu trong tin nhắn cũ có hình ảnh (được đánh dấu đặc biệt), hiển thị lại
-        if "image_url" in message:
-            st.image(message["image_url"])
 
-# Xử lý khi nhập câu hỏi mới
-if prompt := st.chat_input("Hỏi gì hỏi lẹ đi..."):
-    # 1. Hiển thị câu hỏi người dùng
+# Nhập liệu
+if prompt := st.chat_input("Nói gì đi bro..."):
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # 2. Xử lý Logic: Vẽ hay Chat?
-    if "vẽ" in prompt.lower():
-        # --- CHẾ ĐỘ VẼ TRANH ---
-        with st.chat_message("assistant"):
-            st.markdown("Ok, chờ tí tôi vẽ cho xem! 🎨")
-            
-            # Bước 1: Nhờ AI viết mô tả tranh bằng tiếng Anh (Vì công cụ vẽ cần tiếng Anh)
-            prompt_ve = f"Hãy viết một mô tả ngắn gọn bằng tiếng Anh để vẽ bức tranh về: {prompt.replace('vẽ', '')}"
-            
-            # Tạo lịch sử giả lập để nhờ AI dịch
-            history_temp = st.session_state.messages.copy()
-            history_temp.append({"role": "user", "content": prompt_ve})
-            
-            mo_ta_tieng_anh = hoi_gemini(history_temp)
-            
-            # Bước 2: Gọi API vẽ tranh (Pollinations AI - Miễn phí)
-            # Chúng ta nhúng mô tả vào đường link
-            image_url = f"https://image.pollinations.ai/prompt/{mo_ta_tieng_anh}"
-            
-            st.image(image_url, caption="Tranh minh họa nè!")
-            st.markdown(f"*(Mô tả: {mo_ta_tieng_anh})*")
-            
-            # Lưu vào lịch sử
-            st.session_state.messages.append({
-                "role": "assistant", 
-                "content": "Đây là tranh tôi vẽ nè!",
-                "image_url": image_url
-            })
-            
-    else:
-        # --- CHẾ ĐỘ CHAT BÌNH THƯỜNG ---
-        with st.chat_message("assistant"):
-            with st.spinner("Đang nghĩ câu khịa..."):
-                response = hoi_gemini(st.session_state.messages)
-                st.markdown(response)
-        
-        st.session_state.messages.append({"role": "assistant", "content": response})
+    with st.chat_message("assistant"):
+        with st.spinner(f"{tinh_cach} đang soạn tin..."):
+            response = hoi_gemini(st.session_state.messages, tinh_cach)
+            st.markdown(response)
+    
+    st.session_state.messages.append({"role": "assistant", "content": response})
