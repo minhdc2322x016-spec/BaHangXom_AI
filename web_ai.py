@@ -4,7 +4,8 @@ import json
 
 # --- CẤU HÌNH ---
 # Dán API Key của bạn vào đây
-MY_API_KEY = "AIzaSyBLrNQAoD8CpaPGyJvyPm1-JIU-Sn0oR6c".strip()
+# Lấy key từ két sắt bí mật của Streamlit, không để lộ ra ngoài
+MY_API_KEY = st.secrets["GOOGLE_API_KEY"]
 
 st.set_page_config(page_title="Bà Hàng Xóm AI", page_icon="🤬")
 st.title("🤬 Bà Hàng Xóm Đanh Đá")
@@ -97,6 +98,4 @@ if prompt := st.chat_input("Hỏi gì hỏi lẹ đi..."):
                 response = hoi_gemini(st.session_state.messages)
                 st.markdown(response)
         
-
         st.session_state.messages.append({"role": "assistant", "content": response})
-
