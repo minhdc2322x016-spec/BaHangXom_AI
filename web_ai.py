@@ -4,7 +4,7 @@ import json
 
 # --- CẤU HÌNH ---
 # Dán API Key của bạn vào đây
-MY_API_KEY = "AIzaSyAYQ3LVf7dVKxYy3WYXxXEdtpJ6qxPMDBE".strip()
+MY_API_KEY = "AIzaSyCycbNL-Jm2n14uFzOJ-viJIEomKz_0-To".strip()
 
 st.set_page_config(page_title="Bà Hàng Xóm AI", page_icon="🤬")
 st.title("🤬 Bà Hàng Xóm Đanh Đá")
@@ -97,4 +97,5 @@ if prompt := st.chat_input("Hỏi gì hỏi lẹ đi..."):
                 response = hoi_gemini(st.session_state.messages)
                 st.markdown(response)
         
+
         st.session_state.messages.append({"role": "assistant", "content": response})
