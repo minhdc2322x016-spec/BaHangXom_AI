@@ -118,3 +118,8 @@ if prompt := st.chat_input("Gõ gì đó đi..."):
     msg_data = {"role": "assistant", "content": reply}
     if audio_data: msg_data["audio"] = audio_data
     st.session_state.messages.append(msg_data)
+    # ... (Các code cũ trong sidebar giữ nguyên) ...
+    
+    st.divider() # Kẻ đường gạch ngang ngăn cách
+    st.info("👨‍💻 Tác giả: **[Trần Minh]**") 
+    st.caption("© 2026 - Bản quyền thuộc về [Trân Minh]")
