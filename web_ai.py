@@ -7,12 +7,26 @@ from gtts import gTTS
 # --- 1. CẤU HÌNH TRANG WEB ---
 st.set_page_config(page_title="Bà Hàng Xóm AI", page_icon="👵", layout="wide")
 
-# --- 2. GIAO DIỆN & CSS ---
+# --- 2. GIAO DIỆN & CSS (ĐÃ NÂNG CẤP) ---
 st.markdown("""
 <style>
+    /* Ẩn Menu mặc định */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    .stChatInput {position: fixed; bottom: 30px;}
+    
+    /* --- TÙY CHỈNH THANH CHAT --- */
+    
+    /* 1. Chỉnh khung nhập liệu cao hơn */
+    .stChatInput textarea {
+        min-height: 100px !important;  /* Tăng chiều cao (Mặc định là khoảng 50px) */
+        font-size: 18px !important;    /* Chữ to hơn cho dễ đọc */
+        padding-top: 15px !important;  /* Căn chỉnh lề trên cho đẹp */
+    }
+    
+    /* 2. Đẩy khung chat lên cao một chút (tránh bị che bởi taskbar máy tính) */
+    .stChatInput {
+        padding-bottom: 40px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
