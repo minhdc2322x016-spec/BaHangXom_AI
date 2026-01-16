@@ -186,4 +186,4 @@ if prompt := st.chat_input("Practice English here..."):
     
     st.divider() # Kẻ đường gạch ngang ngăn cách
     st.info("👨‍💻 Tác giả: **[Trần Minh]**") 
-    st.caption("© 2026 - Bản quyền thuộc về [Trân Minh]")
+    st.caption("© 2026 - Bản quyền thuộc về [Trần Minh]")
